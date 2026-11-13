@@ -1,0 +1,78 @@
+Labwork 2: Relational Algebra
+Nguyen Sy Dai - 2640145
+=====================================================================
+
+Notation:
+  σ  selection (WHERE)        π  projection (SELECT columns)
+  ⋈  natural join             ρ  rename
+  ∧  and                      ≠  not equal
+
+Note: dept_emp, salaries and dept_manager all have the columns
+from_date and to_date. A natural join between two of them would also
+match on these dates, so the date columns are projected away first.
+
+
+1. All info of all employees
+
+   employees
+
+
+2. All info of all departments
+
+   departments
+
+
+3. Full names of all employees
+
+   π first_name, last_name (employees)
+
+
+4. Names of all departments
+
+   π dept_name (departments)
+
+
+5. Full names of employees working in "ICT" department
+
+   π first_name, last_name ( employees ⋈ dept_emp ⋈ σ dept_name='ICT' (departments) )
+
+
+6. Full names of male employees working in "BIO" department
+
+   π first_name, last_name ( σ gender='M' (employees) ⋈ dept_emp ⋈ σ dept_name='BIO' (departments) )
+
+
+7. Salaries of female employees working in "WEO" department
+
+   π first_name, last_name, salary (
+         σ gender='F' (employees)
+       ⋈ π emp_no, salary (salaries)
+       ⋈ π emp_no, dept_no (dept_emp)
+       ⋈ σ dept_name='WEO' (departments) )
+
+
+8. Full names of employees who have the same last name as their manager
+
+   E ← π emp_no, first_name, last_name, dept_no ( employees ⋈ dept_emp )
+
+   M ← ρ M(m_emp_no, m_last_name, dept_no) (
+           π emp_no, last_name, dept_no ( employees ⋈ dept_manager ) )
+
+   Result ← π first_name, last_name (
+               σ last_name = m_last_name ∧ emp_no ≠ m_emp_no ( E ⋈ M ) )
+
+   (E ⋈ M joins on dept_no: each employee is paired with the managers
+    of his/her department.)
+
+
+9. Full names of employees who was paid more than $100000
+
+   π first_name, last_name ( employees ⋈ σ salary>100000 (salaries) )
+
+
+10. Names of all departments that have employees paid more than $1000000
+
+   π dept_name (
+         departments
+       ⋈ π emp_no, dept_no (dept_emp)
+       ⋈ π emp_no ( σ salary>1000000 (salaries) ) )

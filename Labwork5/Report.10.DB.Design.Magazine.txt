@@ -1,0 +1,131 @@
+Report 10: Database Design - Magazine
+Nguyen Sy Dai - 2640145
+=====================================================================
+
+1. CONCEPTUAL MODEL
+---------------------------------------------------------------------
+Entities:
+  - MAGAZINE : ISSN, number, title, year
+  - ARTICLE  : title, start page, end page
+               (no two articles have the same title -> title is the key)
+  - AUTHOR   : name, e-mail, ascription
+
+Relationships:
+  - MAGAZINE (1) --- contains ---> (N) ARTICLE
+        one magazine issue contains many articles,
+        one article belongs to one magazine issue.
+  - ARTICLE (N) <--- writes ---> (M) AUTHOR
+        one article can be written by several authors,
+        one author can write several articles.
+        Attribute of the relationship: author_order.
+
+ER diagram (text):
+
+  +----------+ 1        N +---------+ N        M +--------+
+  | MAGAZINE |------------| ARTICLE |------------| AUTHOR |
+  +----------+  contains  +---------+   writes   +--------+
+                                     (author_order)
+
+
+2. LOGICAL MODEL (relational schema)
+---------------------------------------------------------------------
+  (PK = primary key, FK = foreign key)
+
+  magazine(issn PK, number PK, title, year)
+  article(title PK, start_page, end_page, issn FK, number FK)
+        (issn, number) -> magazine(issn, number)
+  author(author_id PK, name, email, ascription)
+  article_author(article_title PK FK, author_id PK FK, author_order)
+        article_title -> article(title)
+        author_id     -> author(author_id)
+
+  - A magazine is identified by its ISSN together with the issue number.
+  - The 1-N relationship "contains" becomes a foreign key in article.
+  - The N-M relationship "writes" becomes the table article_author.
+  - author_id is a surrogate key added because names are not unique.
+
+
+3. PHYSICAL MODEL - SQL commands to create the database
+---------------------------------------------------------------------
+DROP DATABASE IF EXISTS magazine_db;
+CREATE DATABASE magazine_db;
+USE magazine_db;
+
+CREATE TABLE magazine (
+    issn    CHAR(9)      NOT NULL,
+    number  INT          NOT NULL,
+    title   VARCHAR(100) NOT NULL,
+    year    YEAR         NOT NULL,
+    PRIMARY KEY (issn, number)
+);
+
+CREATE TABLE article (
+    title       VARCHAR(200) NOT NULL,
+    start_page  INT          NOT NULL,
+    end_page    INT          NOT NULL,
+    issn        CHAR(9)      NOT NULL,
+    number      INT          NOT NULL,
+    PRIMARY KEY (title),
+    FOREIGN KEY (issn, number) REFERENCES magazine (issn, number)
+);
+
+CREATE TABLE author (
+    author_id   INT          NOT NULL AUTO_INCREMENT,
+    name        VARCHAR(100) NOT NULL,
+    email       VARCHAR(100) NOT NULL UNIQUE,
+    ascription  VARCHAR(200),
+    PRIMARY KEY (author_id)
+);
+
+CREATE TABLE article_author (
+    article_title  VARCHAR(200) NOT NULL,
+    author_id      INT          NOT NULL,
+    author_order   INT          NOT NULL,
+    PRIMARY KEY (article_title, author_id),
+    FOREIGN KEY (article_title) REFERENCES article (title),
+    FOREIGN KEY (author_id) REFERENCES author (author_id)
+);
+
+
+4. DESCRIBE commands and outputs
+---------------------------------------------------------------------
+mysql> DESCRIBE magazine;
++--------+--------------+------+-----+---------+-------+
+| Field  | Type         | Null | Key | Default | Extra |
++--------+--------------+------+-----+---------+-------+
+| issn   | char(9)      | NO   | PRI | NULL    |       |
+| number | int          | NO   | PRI | NULL    |       |
+| title  | varchar(100) | NO   |     | NULL    |       |
+| year   | year         | NO   |     | NULL    |       |
++--------+--------------+------+-----+---------+-------+
+
+mysql> DESCRIBE article;
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| title      | varchar(200) | NO   | PRI | NULL    |       |
+| start_page | int          | NO   |     | NULL    |       |
+| end_page   | int          | NO   |     | NULL    |       |
+| issn       | char(9)      | NO   | MUL | NULL    |       |
+| number     | int          | NO   |     | NULL    |       |
++------------+--------------+------+-----+---------+-------+
+
+mysql> DESCRIBE author;
++------------+--------------+------+-----+---------+----------------+
+| Field      | Type         | Null | Key | Default | Extra          |
++------------+--------------+------+-----+---------+----------------+
+| author_id  | int          | NO   | PRI | NULL    | auto_increment |
+| name       | varchar(100) | NO   |     | NULL    |                |
+| email      | varchar(100) | NO   | UNI | NULL    |                |
+| ascription | varchar(200) | YES  |     | NULL    |                |
++------------+--------------+------+-----+---------+----------------+
+
+mysql> DESCRIBE article_author;
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| article_title | varchar(200) | NO   | PRI | NULL    |       |
+| author_id     | int          | NO   | PRI | NULL    |       |
+| author_order  | int          | NO   |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+

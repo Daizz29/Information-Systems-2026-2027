@@ -1,0 +1,142 @@
+Report 11: Database Design - NGO
+Nguyen Sy Dai - 2640145
+=====================================================================
+
+1. CONCEPTUAL MODEL
+---------------------------------------------------------------------
+Entities:
+  - HEAD_OFFICE : identifier, city, country, address, phone, director name
+  - PROJECT     : code, title, start date, end date, budget,
+                  name of the person in charge
+  - CITY        : identifier, name, country, number of inhabitants
+
+Relationships:
+  - HEAD_OFFICE (1) --- manages ---> (N) PROJECT
+        a head office manages many projects,
+        a project is managed by one head office.
+  - PROJECT (N) <--- action ---> (M) CITY
+        a project is formed by actions in several cities,
+        a city can have actions of several projects.
+        Attributes of the relationship: investment, description.
+
+ER diagram (text):
+
+  +-------------+ 1       N +---------+ N        M +------+
+  | HEAD_OFFICE |-----------| PROJECT |------------| CITY |
+  +-------------+  manages  +---------+   action   +------+
+                                   (investment, description)
+
+
+2. LOGICAL MODEL (relational schema)
+---------------------------------------------------------------------
+  (PK = primary key, FK = foreign key)
+
+  head_office(office_id PK, city, country, address, phone, director_name)
+  project(code PK, title, start_date, end_date, budget, manager_name,
+          office_id FK)
+        office_id -> head_office(office_id)
+  city(city_id PK, name, country, inhabitants)
+  action(project_code PK FK, city_id PK FK, investment, description)
+        project_code -> project(code)
+        city_id      -> city(city_id)
+
+  - The 1-N relationship "manages" becomes a foreign key in project.
+  - The N-M relationship between project and city becomes the table
+    action, which stores the investment and description of the action
+    of a project in a city.
+
+
+3. PHYSICAL MODEL - SQL commands to create the database
+---------------------------------------------------------------------
+DROP DATABASE IF EXISTS ngo_db;
+CREATE DATABASE ngo_db;
+USE ngo_db;
+
+CREATE TABLE head_office (
+    office_id      INT          NOT NULL AUTO_INCREMENT,
+    city           VARCHAR(100) NOT NULL,
+    country        VARCHAR(100) NOT NULL,
+    address        VARCHAR(200) NOT NULL,
+    phone          VARCHAR(20),
+    director_name  VARCHAR(100),
+    PRIMARY KEY (office_id)
+);
+
+CREATE TABLE project (
+    code           VARCHAR(20)   NOT NULL,
+    title          VARCHAR(200)  NOT NULL,
+    start_date     DATE          NOT NULL,
+    end_date       DATE,
+    budget         DECIMAL(15,2),
+    manager_name   VARCHAR(100),
+    office_id      INT           NOT NULL,
+    PRIMARY KEY (code),
+    FOREIGN KEY (office_id) REFERENCES head_office (office_id)
+);
+
+CREATE TABLE city (
+    city_id      INT          NOT NULL AUTO_INCREMENT,
+    name         VARCHAR(100) NOT NULL,
+    country      VARCHAR(100) NOT NULL,
+    inhabitants  INT,
+    PRIMARY KEY (city_id)
+);
+
+CREATE TABLE action (
+    project_code  VARCHAR(20)   NOT NULL,
+    city_id       INT           NOT NULL,
+    investment    DECIMAL(15,2),
+    description   VARCHAR(500),
+    PRIMARY KEY (project_code, city_id),
+    FOREIGN KEY (project_code) REFERENCES project (code),
+    FOREIGN KEY (city_id) REFERENCES city (city_id)
+);
+
+
+4. DESCRIBE commands and outputs
+---------------------------------------------------------------------
+mysql> DESCRIBE head_office;
++---------------+--------------+------+-----+---------+----------------+
+| Field         | Type         | Null | Key | Default | Extra          |
++---------------+--------------+------+-----+---------+----------------+
+| office_id     | int          | NO   | PRI | NULL    | auto_increment |
+| city          | varchar(100) | NO   |     | NULL    |                |
+| country       | varchar(100) | NO   |     | NULL    |                |
+| address       | varchar(200) | NO   |     | NULL    |                |
+| phone         | varchar(20)  | YES  |     | NULL    |                |
+| director_name | varchar(100) | YES  |     | NULL    |                |
++---------------+--------------+------+-----+---------+----------------+
+
+mysql> DESCRIBE project;
++--------------+---------------+------+-----+---------+-------+
+| Field        | Type          | Null | Key | Default | Extra |
++--------------+---------------+------+-----+---------+-------+
+| code         | varchar(20)   | NO   | PRI | NULL    |       |
+| title        | varchar(200)  | NO   |     | NULL    |       |
+| start_date   | date          | NO   |     | NULL    |       |
+| end_date     | date          | YES  |     | NULL    |       |
+| budget       | decimal(15,2) | YES  |     | NULL    |       |
+| manager_name | varchar(100)  | YES  |     | NULL    |       |
+| office_id    | int           | NO   | MUL | NULL    |       |
++--------------+---------------+------+-----+---------+-------+
+
+mysql> DESCRIBE city;
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| city_id     | int          | NO   | PRI | NULL    | auto_increment |
+| name        | varchar(100) | NO   |     | NULL    |                |
+| country     | varchar(100) | NO   |     | NULL    |                |
+| inhabitants | int          | YES  |     | NULL    |                |
++-------------+--------------+------+-----+---------+----------------+
+
+mysql> DESCRIBE action;
++--------------+---------------+------+-----+---------+-------+
+| Field        | Type          | Null | Key | Default | Extra |
++--------------+---------------+------+-----+---------+-------+
+| project_code | varchar(20)   | NO   | PRI | NULL    |       |
+| city_id      | int           | NO   | PRI | NULL    |       |
+| investment   | decimal(15,2) | YES  |     | NULL    |       |
+| description  | varchar(500)  | YES  |     | NULL    |       |
++--------------+---------------+------+-----+---------+-------+
+
